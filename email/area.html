@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<style> /* set the CSS */
+
+
+html,body { height:100%; }
+
+body {
+  text-align: center
+}
+
+path {
+  stroke: #4bc1d2;
+  stroke-width: 1.5;
+  fill: none;
+}
+
+.axis path,
+.axis line {
+  fill: none;
+  stroke: grey;
+  stroke-width: 1;
+  shape-rendering: crispEdges;
+}
+.area {
+    fill: lightsteelblue;
+    stroke-width: 0;
+}
+
+@font-face {
+  font-family: Museo100-Regular;
+  src: url('Museo100-Regular.otf');
+}
+
+@font-face {
+  font-family: Museo500-Regular;
+  src: url('Museo500-Regular.otf');
+}
+
+@font-face {
+  font-family: Museo700-Regular;
+  src: url('Museo700-Regular.otf');
+}
+
+.monthLabel {
+  font-family: Museo100-Regular;
+  font-size: 16px;
+  color: #9285ad;
+  margin: 0;
+  padding: 0;
+  padding-right: 60px;
+  /*display: inline;*/
+  text-align:left;
+}
+
+
+.overlay {
+  fill: none;
+  pointer-events: all;
+}
+
+.focus circle {
+  fill: none;
+  stroke: steelblue;
+}
+
+.controls {
+  width: 20%;
+  background-color: #9285ad;
+  float: right;
+  height: 100%;
+  padding-top: 10px;
+  min-height: 760px;
+}
+
+a.titleFilters {
+  font-family: Museo100-Regular;
+  font-size: 24px;
+  color: white;
+}
+
+</style>
+<body>
+
+  <div class='controls'>
+    <a class='titleFilters'>Filters</a>
+  </div>
+
+  <script src="http://d3js.org/d3.v3.min.js"></script>
+
+  <script>
+
+  var curMonth = 4;
+  var curYear = 2014;
+
+
+  function monthToStr(i) {
+    var monthArray = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+    return monthArray[i];
+  }
+
+
+  function drawDay(dayOfMonth, month, year) {
+
+    // Set the dimensions of the canvas / graph
+    var width = 25, height = 20;
+
+    // Set the ranges
+    var	x = d3.scale.linear().range([0, width]);
+    var	y = d3.scale.linear().range([height, 0]);
+
+    // Define the axes
+    var	xAxis = d3.svg.axis().scale(x)
+      .orient("bottom").ticks(10);
+
+    var	yAxis = d3.svg.axis().scale(y)
+      .orient("left").ticks(5);
+
+    // Define the line
+    var	valueline = d3.svg.line()
+      .x(function(d) { return x(d.hour); })
+      .y(function(d) { return y(d.count); });
+
+
+    var area = d3.svg.area()
+    .x(function(d) { return x(d.hour); })
+    .y0(height)
+    .y1(function(d) { return y(d.count); });
+
+
+    // Adds the svg canvas
+    var	svg = d3.select("body")
+    .append("svg")
+    .attr("width", width)
+    .attr("height", height)
+    //.style("border-style", "solid")
+    //.style("border-width", "3px")
+    .append("g");
+
+
+    // Get the data
+    d3.csv("data.csv", function(error, data) {
+
+      data = data.filter(function(row) {
+        return ((row['day'] == dayOfMonth) && (row['month'] == month) && (row['year'] == year));
+      });
+
+      //data.sort(function(a,b) { return b.hour - a.hour; });
+      data.sort(function(a,b) { return a.hour - b.hour; });
+
+      data.forEach(function(d) {
+
+        d.hour = +d.hour;
+        d.count = +d.count;
+        //d.count = Math.floor((Math.random()*30)+1);//+d.count;
+
+      });
+
+      // Scale the range of the data
+      var padding = 10;
+      x.domain([0-padding/4, 23+padding]);
+      //x.domain([0, 23]);
+      y.domain([0, 10]);
+
+
+      // Add the valueline path.
+      svg.append("path")
+      .attr("class", "line")
+      .attr("d", valueline(data));
+
+      svg.append("path")
+        .attr("class", "area")
+        .attr("d", area(data));
+
+
+      svg.append("text")
+      .attr("x", 15)
+      .attr("y", 7)
+      .style("fill","#c0d7c4")
+      .style("font-size","9px")
+      .style("font-family", "Museo500-Regular")
+      .text(dayOfMonth);
+
+
+      var focus = svg.append("g")
+      .attr("class", "focus")
+      .style("display", "none");
+
+      focus.append("circle")
+      .attr("r", 1.0);
+
+      focus.append("text")
+      .attr("x", -1.0)
+      .attr("y", -6.0)
+      .attr("dy", ".35em")
+      .style("fill","#9285ad")
+      .style("font-size","8px")
+      .style("font-family", "Museo700-Regular");
+
+      svg.append("rect")
+      .attr("class", "overlay")
+      .attr("width", width)
+      .attr("height", height)
+      .on("mouseover", function() { focus.style("display", null); })
+      .on("mouseout", function() { focus.style("display", "none"); })
+      .on("mousemove", mousemove);
+
+      function mousemove() {
+        var x0 = x.invert(d3.mouse(this)[0]);//,
+        i = Math.round(x0);
+        d = data[i];
+        if(d !== undefined) {
+          //console.log('x0: ' + x0);
+          //console.log('d: ' + d.count);
+          focus.attr("transform", "translate(" + x(d.hour) + "," + y(d.count) + ")");
+          focus.select("text").text(d.count);
+        }
+      }
+
+    });
+
+  }
+
+  function drawMonth(curMonth, curYear) {
+    var sep = '&nbsp;&nbsp;&nbsp;'; //'    ';
+    for(var i = 1; i <= 31; ++i) {
+      drawDay(i,curMonth,curYear);
+
+      //document.write(sep);
+      if (i%7 == 0) {
+        //document.write('<br>');
+      }
+    }
+    document.write('<br>');
+  }
+
+
+  function drawYear() {
+    var sep = '&nbsp;&nbsp;&nbsp;';
+    for(var i = 11; i >= 0; --i) {
+      document.write('<div class="monthLabel">');
+      document.write(monthToStr(curMonth-1)); // (i)
+      document.write('</div>');
+      drawMonth(curMonth,curYear);
+
+      curMonth = curMonth - 1;
+      if (curMonth == 0) {
+        curYear = curYear - 1;
+        curMonth = 12;
+      }
+
+      document.write(sep);
+      //if (i%4 == 0) {
+      //  document.write('<br><br><br><br>');
+      //}
+    }
+  }
+
+  drawYear();
+
+  </script>
+</body>

@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+
+<script src="./d3.v3/d3.v3.min.js" type="text/javascript"></script>
+
+<script src="./RightJS/right.js" type="text/javascript"></script>
+<script src="./RightJS/application.js" type="text/javascript"></script>
+<script src="./RightJS/right-autocompleter.js" type="text/javascript"></script>
+<link href="./RightJS/application.css" media="screen" rel="stylesheet" type="text/css">
+<script src="./RightJS/right-slider.js" type="text/javascript"></script>
+<link href="./RightJS/rightjs-ui-home.css" media="screen" rel="stylesheet" type="text/css">
+
+<link rel="stylesheet" href="//code.jquery.com/ui/1.10.4/themes/smoothness/jquery-ui.css">
+  <script src="//code.jquery.com/jquery-1.10.2.js"></script>
+  <script src="//code.jquery.com/ui/1.10.4/jquery-ui.js"></script>
+
+<head>
+<style> /* set the CSS */
+
+
+html,body { height:100%; }
+
+body {
+  text-align: center
+}
+
+path {
+  stroke: #4bc1d2;
+  stroke-width: 1.5;
+  fill: none;
+}
+
+.axis path,
+.axis line {
+  fill: none;
+  stroke: grey;
+  stroke-width: 1;
+  shape-rendering: crispEdges;
+}
+
+@font-face {
+  font-family: Museo100-Regular;
+  src: url('Museo100-Regular.otf');
+}
+
+@font-face {
+  font-family: Museo500-Regular;
+  src: url('Museo500-Regular.otf');
+}
+
+@font-face {
+  font-family: Museo700-Regular;
+  src: url('Museo700-Regular.otf');
+}
+
+.monthLabel {
+  font-family: Museo100-Regular;
+  font-size: 16px;
+  color: #9285ad;
+  margin: 0;
+  padding: 0;
+  padding-right: 60px;
+  /*display: inline;*/
+  text-align:left;
+}
+
+.overlay {
+  fill: none;
+  pointer-events: all;
+}
+
+.focus circle {
+  fill: none;
+  stroke: steelblue;
+}
+
+.controls {
+  width: 20%;
+  background-color: #9285ad;
+  float: right;
+  height: 100%;
+  padding-top: 10px;
+  min-height: 760px;
+}
+
+a.titleFilters {
+  font-family: Museo100-Regular;
+  font-size: 24px;
+  color: white;
+  text-decoration: none;
+}
+
+a.titleSlider1 {
+  font-family: Museo100-Regular;
+  font-size: 13px;
+  color: white;
+  text-decoration: none;
+}
+
+.colorize {
+  fill: #4bc1d2;
+}
+
+.faded {
+  fill: #4bc1d2;
+  opacity:0.2;
+}
+
+
+.colorizeWeekend {
+  fill: #957aa3;
+}
+
+.fadedWeekend {
+  fill: #957aa3;
+  opacity:0.2;
+}
+
+.slider-demo {
+  width: 80%;
+  margin-top: 10%;
+  margin-left: 10%;
+  margin-right: 10%;
+}
+
+.slider-range {
+  width: 80%;
+  margin-top: 10%;
+  margin-left: 10%;
+  margin-right: 10%;
+  font-size: 30%;
+}
+
+input.slider-out {
+  width: 15%;
+  height: 14px;
+  padding: .1em .2em;
+  border: 1px solid #DDD;
+  margin-left: 1em;
+}
+
+div.rui-slider {
+  width: 75%;
+  height: 3px;
+}
+
+div.rui-slider .handle {
+  width: 6px;
+  height: 1.5em;
+}
+
+.amount {
+  width: 33%;
+}
+
+
+</style>
+
+
+<script>
+
+  $(function() {
+    $( "#slider-range" ).slider({
+      range: true,
+      min: 0,
+      max: 23,
+      values: [ 0, 23 ],
+      slide: function( event, ui ) {
+        $( "#amount" ).val( ui.values[ 0 ] + " - " + ui.values[ 1 ] );
+      }
+    });
+    $( "#amount" ).val( $( "#slider-range" ).slider( "values", 0 ) +
+      " - " + $( "#slider-range" ).slider( "values", 1 ) );
+  });
+
+
+  function timeChange() {
+    var min = $( "#slider-range" ).slider( "values", 0 );
+    var max = $( "#slider-range" ).slider( "values", 1 );
+    location.href = "bar.html?" + "currentHour=" + currentHour + "&minHour=" + min + "&maxHour=" + max;
+  }
+
+
+  function humanTime(i) {
+    if (i == 0 || i == 24) {
+      return "12AM";
+    }
+    else if (i <= 11) {
+      return i + "AM";
+    }
+    else if (i == 12) {
+      return "12PM";
+    }
+    else {
+      return (i-12) + "PM";
+    }
+  }
+  </script>
+
+</head>
+
+<body>
+
+  <div class='controls'>
+    <a class='titleFilters'>Filters</a>
+    <div class="slider-demo" id="d-slider-0"><input class="slider-out" id="slider-out-13" type="text"></div>
+    <a class='titleSlider1'>emails per hour</a>
+
+    <br><br><br><br><br>
+
+    <a class="titleSlider1">Timeframe</a>
+    <input type="text" id="amount" class="amount">
+    <button type="button" onClick="timeChange()">Go!</button>
+
+  <div class="slider-range" id="slider-range"></div>
+
+  </div>
+
+
+<script>
+
+
+  var Request = new Object();
+  Request = GetRequest();
+  var currentHour = parseInt(Request['currentHour']);
+
+  var minHour = parseInt(Request['minHour']);
+  var maxHour = parseInt(Request['maxHour']);
+
+
+  if (!currentHour) {
+    currentHour = 1;
+  }
+
+  if (!minHour && maxHour) {
+    minHour = 0;
+  }
+  else if (minHour && !maxHour) {
+    maxHour = 23;
+  }
+  else if (minHour && maxHour) {
+    // DO NOTHING
+  }
+  else if (!minHour && !maxHour) {
+    minHour = 0;
+    maxHour = 23;
+  }
+
+
+    $(function() {
+    $( "#slider-range" ).slider({
+      range: true,
+      min: 0,
+      max: 23,
+      values: [ minHour, maxHour ],
+      slide: function( event, ui ) {
+        $( "#amount" ).val( humanTime(ui.values[ 0 ]) + " - " + humanTime(ui.values[ 1 ] + 1) );
+      }
+    });
+    $( "#amount" ).val( humanTime($( "#slider-range" ).slider( "values", 0 )) + " - " + humanTime($( "#slider-range" ).slider( "values", 1 ) + 1) );
+    });
+
+  var hourSliderMin = 1;
+  var hourSliderMax = 15;
+  //var hourSliderDefault = 1;
+
+  new Slider({
+    direction: 'x',
+    min: hourSliderMin,
+    max: hourSliderMax,
+    snap: 1,
+    value: currentHour
+  })
+  .onChange(hourChange)
+  .insertTo('d-slider-0', 'top')
+  .assignTo('slider-out-13');
+
+  function hourChange() {
+      //var currentHour = this.value;
+      //drawYear();
+      console.log(minHour + "/" + maxHour);
+      location.href = "bar.html?currentHour=" + this.value + "&minHour=" + minHour + "&maxHour=" + maxHour;
+  }
+
+  var curMonth = 6;
+  var curYear = 2014;
+
+
+
+  function monthToStr(i) {
+    var monthArray = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+    return monthArray[i];
+  }
+
+
+  function drawDay(dayOfMonth, month, year) {
+
+    // Set the dimensions of the canvas / graph
+    var width = 25, height = 20;
+
+    // Set the ranges
+    var	x = d3.scale.linear().range([0, width]);
+    var	y = d3.scale.linear().range([height, 0]);
+
+    // Define the axes
+    var	xAxis = d3.svg.axis().scale(x)
+    .orient("bottom").ticks(10);
+
+    var	yAxis = d3.svg.axis().scale(y)
+    .orient("left").ticks(5);
+
+    // Define the line
+    var	valueline = d3.svg.line()
+    .x(function(d) { return x(d.hour); })
+    .y(function(d) { return y(d.count); });
+
+    // Adds the svg canvas
+    var	svg = d3.select("body")
+    .append("svg")
+    .attr("width", width)
+    .attr("height", height)
+    .append("g");
+
+    // allow for click anywhere not just on bar/number
+    var rectangle = svg.append("rect")
+    .attr("x", 0)
+    .attr("y", 0)
+    .attr("width", width)
+    .attr("height", height)
+    .style("opacity", 0);
+
+
+    // Get the data
+    d3.csv("data.csv", function(error, data) {
+
+      data.sort(function(a,b) { return a.hour - b.hour; });
+
+      data.forEach(function(d) {
+
+        d.hour = +d.hour;
+        d.count = +d.count;
+        d.weekday = +d.weekday;
+        d.recipients = d.recipients;
+
+      });
+
+      var recip = "";
+
+      data = data.filter(function(row) {
+
+
+        if ((row['day'] == dayOfMonth) && (row['month'] == month) && (row['year'] == year)) {
+          recip = recip.concat(row['recipients']);
+        }
+
+        return ((row['day'] == dayOfMonth) && (row['month'] == month) && (row['year'] == year));
+      });
+
+      recip = recip.replace(/;/g, "\n");
+
+      if (recip != "") {
+        svg.on("click", function(event){ alert(recip) });
+      }
+
+
+      var padding = 10;
+
+      var x = d3.scale.linear().domain([0,23]).range([0,23]);
+      var y = d3.scale.linear().domain([0,10]).range([0,20]);
+      var y2 = d3.scale.linear().domain([0,10]).range([20,0]);
+
+      svg.selectAll("rect")
+      .data(data)
+      .enter()
+      .append("rect")
+      .attr("x", function(d, i) { return d['hour']; } )
+      .attr("y", function(d, i) { return y2(d['count']); } )
+      .attr("width", function(d, i) { return 1; } )
+      .attr("height", function(d, i) { return y(d['count']); } )
+      //.attr("class", function(d, i) { return "colorize"; } );
+      .attr("class", function(d, i) {
+        if ( (parseInt( d['count']) < currentHour) || (parseInt( d['hour']) < minHour) || (parseInt( d['hour']) > maxHour) )
+          {
+
+            if (parseInt(d['weekday']) == 1) {
+              return "faded";
+            }
+            else {
+              return "fadedWeekend";
+            }
+          }
+          else {
+            if (parseInt(d['weekday']) == 1) {
+              return "colorize";
+            }
+            else {
+              return "colorizeWeekend";
+            }
+          }
+        }
+      );
+
+      if (month == 6) {
+      svg.append("text")
+      .attr("x", 15)
+      .attr("y", 7)
+      .style("fill","#c0d7c4")
+      .style("font-size","9px")
+      .style("font-family", "Museo500-Regular")
+      .text(dayOfMonth);
+    }
+
+    });
+
+  }
+
+  function drawMonth(curMonth, curYear) {
+    //var sep = '&nbsp;&nbsp;&nbsp;'; //'    ';
+    for(var i = 1; i <= 31; ++i) {
+      drawDay(i,curMonth,curYear);
+
+      //document.write(sep);
+      if (i%7 == 0) {
+        //document.write('<br>');
+      }
+    }
+    document.write('<br>');
+  }
+
+
+  function drawYear() {
+    var sep = '&nbsp;';
+    for(var i = 11; i >= 0; --i) {
+      document.write('<div class="monthLabel">');
+      document.write('&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;');
+      if (curMonth != 6) {
+        document.write(monthToStr(curMonth-1)); // (i)
+      }
+      else {
+        // ignore month 6
+      }
+      document.write('</div>');
+      drawMonth(curMonth,curYear);
+
+      curMonth = curMonth - 1;
+      if (curMonth == 0) {
+        curYear = curYear - 1;
+        curMonth = 12;
+      }
+
+      document.write(sep);
+      //if (i%4 == 0) {
+      //  document.write('<br><br><br><br>');
+      //}
+    }
+  }
+
+  drawYear();
+
+
+    function GetRequest() {
+     var url = location.search;
+     var theRequest = new Object();
+     if (url.indexOf("?") != -1) {
+        var str = url.substr(1);
+        strs = str.split("&");
+        for(var i = 0; i < strs.length; i ++) {
+           theRequest[strs[i].split("=")[0]]=unescape(strs[i].split("=")[1]);
+        }
+     }
+     return theRequest;
+  }
+
+
+  </script>
+</body>
