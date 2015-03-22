@@ -14,8 +14,10 @@ Use a Python script to compact data into hour-based format.<br />
 <br />
 3. Display<br />
 A small piece is shown as below:<br />
+<img src="https://github.com/legbird/email-analytics/blob/master/screenshots/may.png" width="40%" height="40%" /><br />
 <br />
 4. Add Filters<br />
+<img src="https://github.com/legbird/email-analytics/blob/master/screenshots/filters.png" width="25%" height="25%" /><br />
 <br />
 ### Skills Involved
 * Data Analyses: Perl, Python, MySQL<br />
